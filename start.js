@@ -61,10 +61,10 @@ httpServer.listen(port, function () {
     console.log('server running on port ' + port + '.');
 });
 
-/*
-var poiQueryController = require('./controller/poiQueryController');
-poiQueryController(app);
 
+var productDatumTableController = require('./controller/productDatumTableController');
+productDatumTableController(app);
+/*
 var poiEditController = require('./controller/poiEditController');
 poiEditController(app);
 */

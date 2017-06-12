@@ -26,6 +26,7 @@
     "request": "^2.73.0",
     "secure-random-string": "^1.0.0",
     "zoodubbo":"^0.1.2",
+    "node-zookeeper-client": "^0.2.2",
     "captchapng":"^0.0.1",
     "pnglib":"^0.0.1",
     "node-uuid":"^1.4.7",

@@ -229,7 +229,7 @@ Invoker.prototype._excute = function (method, args, cb) {
     } else {
         fromCache = false;
         return self._zd.getProvider(self._path, self._version, httpFetch);
-    }
+    } 
     function httpFetch(err, provider) {
         if (err) {
             return cb(err);
@@ -244,7 +244,11 @@ Invoker.prototype._excute = function (method, args, cb) {
         //http request data
         var method_url = provider.methods[method].split(':');
         if(method_url[0].toUpperCase().indexOf("GET") == -1){
-            var real_url = provider.host + method_url[1];
+            var real_url = provider.host + method_url[1] + '?a=1';
+            for(var k in args){
+                if(real_url.indexOf('{' + k + '}') > -1) real_url = real_url.replace('{' + k + '}',args[k]);
+            }
+            console.log('=============post to dubbo rest, url: ' + real_url + ',json:', args);
             request.post({url:real_url,json:args}, function(err, rsp, body){
                 if(err){
                     console.log('=====invoke rest service post error:', err);
@@ -254,10 +258,12 @@ Invoker.prototype._excute = function (method, args, cb) {
                 }
             });
         }else{
-            var real_url = provider.host + method_url[1];
+            var real_url = provider.host + method_url[1] + '?a=1';
             for(var k in args){
-                real_url = real_url.replace('{' + k + '}',args[k]);
+                if(real_url.indexOf('{' + k + '}') > -1) real_url = real_url.replace('{' + k + '}',args[k]);
+                else real_url += '&' + k + '=' + encodeURIComponent(args[k]);
             }
+            console.log('=============get from dubbo rest, url: ' + real_url);
             request.get(real_url, function (error, response, body) {
                 if(error){
                     console.log('=====invoke rest service get error:', error);
@@ -275,24 +281,22 @@ Invoker.prototype._excute = function (method, args, cb) {
     }
 };
 
-module.exports.Zook = ZD;
+var zd = new ZD({
+    connection: 'inner.dubbo1.woqu.com:2188,inner.dubbo2.woqu.com:2188,inner.dubbo3.woqu.com:2188',
+    version: '2.8.4'
+});
+zd.client.on('connected', function(rsp) {
+    console.log('zookeeper client connected!', rsp);
+});
+// connect to zookeeper
+zd.connect();
+
+module.exports = zd;
+
 /////////////////////////////////////////////////////////////////test start/////////////////////////////////////////////////////////////////
 if(2>11){
-    var zd = new ZD({
-        // config the addresses of zookeeper
-        connection: 'inner.dubbo1.woqu.com:2188,inner.dubbo2.woqu.com:2188,inner.dubbo3.woqu.com:2188',
-        version: '2.8.4'
-    });
-    zd.client.on('connected', function(rsp) {
-        console.log('zookeeper client connected!', rsp);
-    });
-// connect to zookeeper
-    zd.connect();
-    setTimeout(function () {
-        zd.close();
-    },5000);
     var visaProductInfoServiceRemote = zd.getInvoker('com.woqu.visa.v2.product.service.VisaProductInfoService',{timeout:10000});
-    visaProductInfoServiceRemote.excute('queryProductById',{name:'tomcat'}, function(err,data){
+    visaProductInfoServiceRemote.excute('queryProductById',{id:1}, function(err,data){
         console.log('========================data:', data);
     });
 }
