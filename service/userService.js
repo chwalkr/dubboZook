@@ -1,6 +1,6 @@
 'use strict';
 var Promise = require('bluebird');
-var userRemote = require('../dubbo/dubboRemoteService').userRemote;
+var userRemote = require('../dubbo/dubboRemote').userRemote;
 var XXTea =  require('../util/XXTeaUtil');
 var env =  require('../config/config').env;
 const USER_ENCRYPT_KEY = 'center';//与会员服务约定的uid解密key
@@ -29,7 +29,7 @@ var UserService = {
         let uid = this.queryUserId(req);
         return new Promise(function (resolve, reject) {
             if(env == 'DEV'){
-                uid = 1125;
+               return resolve({rs:1, data:{trueName:'test',userId:123456}});
             }
             if(!uid) return reject({rs:0, msg:'当前未登录或已过期'});
             userRemote.excute('queryUser',

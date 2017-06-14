@@ -64,6 +64,8 @@ httpServer.listen(port, function () {
 
 var productDatumTableController = require('./controller/productDatumTableController');
 productDatumTableController(app);
+var productInfoController = require('./controller/productInfoController');
+productInfoController(app);
 /*
 var poiEditController = require('./controller/poiEditController');
 poiEditController(app);

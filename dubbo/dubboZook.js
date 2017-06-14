@@ -1,3 +1,6 @@
+/**
+ * for dubbo rest
+ */
 'use strict';
 
 var net = require('net');
@@ -243,13 +246,27 @@ Invoker.prototype._excute = function (method, args, cb) {
         }
         //http request data
         var method_url = provider.methods[method].split(':');
-        if(method_url[0].toUpperCase().indexOf("GET") == -1){
+        if(method_url[0].toUpperCase().indexOf("POST-JSON") != -1){
             var real_url = provider.host + method_url[1] + '?a=1';
             for(var k in args){
                 if(real_url.indexOf('{' + k + '}') > -1) real_url = real_url.replace('{' + k + '}',args[k]);
             }
-            console.log('=============post to dubbo rest, url: ' + real_url + ',json:', args);
+            console.log('=============post json to dubbo rest service, url: ' + real_url + ',json:', args);
             request.post({url:real_url,json:args}, function(err, rsp, body){
+                if(err){
+                    console.log('=====invoke rest service post error:', err);
+                    cb(err);
+                }else{
+                    cb(false, body);
+                }
+            });
+        }else if(method_url[0].toUpperCase().indexOf("POST-FORM") != -1){
+            var real_url = provider.host + method_url[1] + '?a=1';
+            for(var k in args){
+                if(real_url.indexOf('{' + k + '}') > -1) real_url = real_url.replace('{' + k + '}',args[k]);
+            }
+            console.log('=============post form to dubbo rest service, url: ' + real_url + ',form:', args);
+            request.post({url:real_url,form:args}, function(err, rsp, body){
                 if(err){
                     console.log('=====invoke rest service post error:', err);
                     cb(err);
@@ -263,7 +280,7 @@ Invoker.prototype._excute = function (method, args, cb) {
                 if(real_url.indexOf('{' + k + '}') > -1) real_url = real_url.replace('{' + k + '}',args[k]);
                 else real_url += '&' + k + '=' + encodeURIComponent(args[k]);
             }
-            console.log('=============get from dubbo rest, url: ' + real_url);
+            console.log('=============get from dubbo rest service, url: ' + real_url);
             request.get(real_url, function (error, response, body) {
                 if(error){
                     console.log('=====invoke rest service get error:', error);
