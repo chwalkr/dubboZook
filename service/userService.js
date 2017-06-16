@@ -1,6 +1,6 @@
 'use strict';
 var Promise = require('bluebird');
-var userRemote = require('../dubbo/dubboRemote').userRemote;
+var userRemote = require('../remote/dubboRemote').userRemote;
 var XXTea =  require('../util/XXTeaUtil');
 var env =  require('../config/config').env;
 const USER_ENCRYPT_KEY = 'center';//与会员服务约定的uid解密key

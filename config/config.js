@@ -1,10 +1,9 @@
-var env = process.env.POI_ENV || "PROD"; //DEV | PROD
+var env = process.env.VISA_ENV || "PROD"; //DEV | PROD
 //for test :
 env = "DEV";
 console.log('==============current env:', env);
 
 module.exports.env = env;
-module.exports.basePath = 'http://api.admin.woxing.com';
 module.exports.logger = {
     "appenders": [
         {

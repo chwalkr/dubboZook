@@ -1,5 +1,5 @@
-var visaProductInfoService = require('../dubbo/dubboRemote').visaProductInfoService;
-var userService = require('../service/userService');
+var visaProductInfoService = require('../../remote/restRemote').visaProductInfoService;
+var userService = require('../../service/userService');
 
 module.exports = function (app) {
     app.post('/visa/v2/product/search', function (req, res, next) {
@@ -13,7 +13,7 @@ module.exports = function (app) {
             state:req.body.state||null
         }, function(err, crs){
             if(err) res.json({rs:0,msg:err}).end();
-            res.send(crs).end()||'';
+            res.json(crs).end()||'';
         });
     });
 
@@ -23,7 +23,7 @@ module.exports = function (app) {
             id:req.params.id||0
         }, function(err, crs){
             if(err) res.json({rs:0,msg:err}).end();
-            res.send(crs).end()||'';
+            res.json(crs).end()||'';
         });
     });
 
@@ -34,7 +34,7 @@ module.exports = function (app) {
             req.body.creator = uname;
             visaProductInfoService.excute('addProduct',req.body, function(err, crs){
                 if(err) res.json({rs:0,msg:err}).end();
-                res.send(crs).end()||'';
+                res.json(crs).end()||'';
             });
         }).catch(function (crs) {
             res.json(crs);
@@ -48,7 +48,7 @@ module.exports = function (app) {
             req.body.modifier = uname;
             visaProductInfoService.excute('updateProductBase',req.body, function(err, crs){
                 if(err) res.json({rs:0,msg:err}).end();
-                res.send(crs).end()||'';
+                res.json(crs).end()||'';
             });
         }).catch(function (crs) {
             res.json(crs);
@@ -61,7 +61,7 @@ module.exports = function (app) {
             var uname = userCrs.data.trueName||userCrs.data.loginName;
             visaProductInfoService.excute('updateProductState',{id:req.params.id||0, state:req.query.state, modifier:uname}, function(err, crs){
                 if(err) res.json({rs:0,msg:err}).end();
-                res.send(crs).end()||'';
+                res.json(crs).end()||'';
             });
         }).catch(function (crs) {
             res.json(crs);
@@ -77,7 +77,7 @@ module.exports = function (app) {
                 modifier:uname
             }, function(err, crs){
                 if(err) res.json({rs:0,msg:err}).end();
-                res.send(crs).end()||'';
+                res.json(crs).end()||'';
             });
         }).catch(function (crs) {
             res.json(crs);
@@ -95,7 +95,7 @@ module.exports = function (app) {
                 modifier:uname
             }, function(err, crs){
                 if(err) res.json({rs:0,msg:err}).end();
-                res.send(crs).end()||'';
+                res.json(crs).end()||'';
             });
         }).catch(function (crs) {
             res.json(crs);
@@ -111,8 +111,9 @@ module.exports = function (app) {
                 saleChannels:req.query.saleChannels,
                 modifier:uname
             }, function(err, crs){
+                console.log('====================xxxxxxxxxxxxxxxxxxxxxx============' + typeof crs);
                 if(err) res.json({rs:0,msg:err}).end();
-                res.send(crs).end()||'';
+                res.json(crs).end()||'';
             });
         }).catch(function (crs) {
             res.json(crs);
@@ -123,9 +124,9 @@ module.exports = function (app) {
         console.log('=========product clone id : ', req.params.id);
         userService.queryUserInfo(req).then(function (userCrs) {
             var uname = userCrs.data.trueName||userCrs.data.loginName;
-            visaProductInfoService.excute('copyProduct',{operator:uname}, function(err, crs){
+            visaProductInfoService.excute('copyProduct',{id:req.params.id, operator:uname}, function(err, crs){
                 if(err) res.json({rs:0,msg:err}).end();
-                res.send(crs).end()||'';
+                res.json(crs).end()||'';
             });
         }).catch(function (crs) {
             res.json(crs);

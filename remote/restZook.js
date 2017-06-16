@@ -257,7 +257,7 @@ Invoker.prototype._excute = function (method, args, cb) {
                     console.log('=====invoke rest service post error:', err);
                     cb(err);
                 }else{
-                    cb(false, body);
+                    cb(false, (typeof body)=='string'?JSON.parse(body):body);
                 }
             });
         }else if(method_url[0].toUpperCase().indexOf("POST-FORM") != -1){
@@ -271,7 +271,7 @@ Invoker.prototype._excute = function (method, args, cb) {
                     console.log('=====invoke rest service post error:', err);
                     cb(err);
                 }else{
-                    cb(false, body);
+                    cb(false, (typeof body)=='string'?JSON.parse(body):body);
                 }
             });
         }else{
@@ -286,7 +286,7 @@ Invoker.prototype._excute = function (method, args, cb) {
                     console.log('=====invoke rest service get error:', error);
                     cb(error);
                 }else{
-                    cb(false, body);
+                    cb(false, (typeof body)=='string'?JSON.parse(body):body);
                 }
             });
         }
@@ -303,18 +303,9 @@ var zd = new ZD({
     version: '2.8.4'
 });
 zd.client.on('connected', function(rsp) {
-    console.log('zookeeper client connected!', rsp);
+    console.log('zookeeper client (for rest protocol) connected!');
 });
 // connect to zookeeper
 zd.connect();
 
 module.exports = zd;
-
-/////////////////////////////////////////////////////////////////test start/////////////////////////////////////////////////////////////////
-if(2>11){
-    var visaProductInfoServiceRemote = zd.getInvoker('com.woqu.visa.v2.product.service.VisaProductInfoService',{timeout:10000});
-    visaProductInfoServiceRemote.excute('queryProductById',{id:1}, function(err,data){
-        console.log('========================data:', data);
-    });
-}
-/////////////////////////////////////////////////////////////////test end/////////////////////////////////////////////////////////////////
