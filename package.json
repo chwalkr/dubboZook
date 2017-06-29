@@ -25,12 +25,12 @@
     "qn": "^1.2.0",
     "request": "^2.73.0",
     "secure-random-string": "^1.0.0",
-    "zoodubbo": "^0.1.2",
+    "zoodubbo":"^0.1.2",
     "node-zookeeper-client": "^0.2.2",
-    "captchapng": "^0.0.1",
-    "pnglib": "^0.0.1",
-    "node-uuid": "^1.4.7",
-    "socket.io": "^1.7.2"
+    "captchapng":"^0.0.1",
+    "pnglib":"^0.0.1",
+    "node-uuid":"^1.4.7",
+    "socket.io":"^1.7.2"
   },
   "scripts": {
     "debug": "DEBUG=send-mail,task-checkin,,event-sub,redis-io,cloud-main,verify-email,util-orderLog,util-order,pay,web-custom-service,util,man-ctrl-user,man-ctrl-property,service-order,ctrl-order,ctrl-custom,service-custom,property-custom,user-service,controller-property,service-property node index.js",
@@ -41,7 +41,6 @@
     "node": ">=4.3"
   },
   "devDependencies": {
-    "babel-preset-es2015": "^6.24.1",
     "istanbul": "^0.4.4",
     "mocha": "^3.0.2",
     "should": "^11.1.0",

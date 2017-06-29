@@ -1,10 +1,10 @@
-var visaProductPriceService = require('../../remote/restRemote').visaProductInfoService;
+var visaProductPriceService = require('../../remote/restRemote').visaProductPriceService;
 
 module.exports = function (app) {
     app.get('/visa/v2/product/price/area/:visaCode', function (req, res, next) {
         console.log('=========product price of area : ', req.params);
         visaProductPriceService.excute('queryAreaPrices',{visaCode:req.params.visaCode}, function(err, crs){
-            if(err) res.json({rs:0,msg:err}).end();
+            if(err) return res.json({rs:0,msg:err}).end();
             res.json(crs).end()||'';
         });
     });
@@ -12,7 +12,7 @@ module.exports = function (app) {
     app.get('/visa/v2/product/price/pkg/:visaCode', function (req, res, next) {
         console.log('=========product price of pkg : ', req.params);
         visaProductPriceService.excute('queryPkgPrices',{visaCode:req.params.visaCode}, function(err, crs){
-            if(err) res.json({rs:0,msg:err}).end();
+            if(err) return res.json({rs:0,msg:err}).end();
             res.json(crs).end()||'';
         });
     });
@@ -20,7 +20,7 @@ module.exports = function (app) {
     app.post('/visa/v2/product/price/area/save', function (req, res, next) {
         console.log('=========product area price save : ', req.body);
         visaProductPriceService.excute('saveAreaPrices',req.body, function(err, crs){
-            if(err) res.json({rs:0,msg:err}).end();
+            if(err) return res.json({rs:0,msg:err}).end();
             res.json(crs).end()||'';
         });
     });
@@ -28,7 +28,7 @@ module.exports = function (app) {
     app.post('/visa/v2/product/price/pkg/save', function (req, res, next) {
         console.log('=========product pkg price save : ', req.body);
         visaProductPriceService.excute('savePkgPrices',req.body, function(err, crs){
-            if(err) res.json({rs:0,msg:err}).end();
+            if(err) return res.json({rs:0,msg:err}).end();
             res.json(crs).end()||'';
         });
     });

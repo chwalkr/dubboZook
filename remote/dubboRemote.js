@@ -54,4 +54,5 @@ zd.client.on('connected', function connect(rsp) {
 // connect to zookeeper
 zd.connect();
 module.exports.userRemote = zd.getInvoker('com.woqu.ess.service.UserService');
-
+module.exports.visaQueryFacadeRemote = zd.getInvoker('com.woqu.order.visa.facade.VisaQueryFacade');
+module.exports.visaOperationFacadeRemote = zd.getInvoker('com.woqu.order.visa.facade.VisaOperationFacade');

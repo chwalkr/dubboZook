@@ -130,11 +130,12 @@ ZD.prototype.getProvider = function (path, version, cb) {
             request.get({url:req_url,contentType:'application/json'}, function(err, rsp, crs){
                 if(err){
                     console.log('===find path of service error',err);
+                    return cb("inner service exception, cannot get paths");
                 }
                 console.log('===find path of service success' , crs);
                 if(rsp.headers['content-type'].indexOf('application/json') > -1) crs = JSON.parse(crs);
                 if(crs.rs != 1){
-                    return cb("inner service exception, cannot get paths");
+                    return cb("inner service exception, get paths exception");
                 }else{
                     provider.methods = crs.data;
                     self._cache[path] = provider;
@@ -249,21 +250,33 @@ Invoker.prototype._excute = function (method, args, cb) {
         if(method_url[0].toUpperCase().indexOf("POST-JSON") != -1){
             var real_url = provider.host + method_url[1] + '?a=1';
             for(var k in args){
-                if(real_url.indexOf('{' + k + '}') > -1) real_url = real_url.replace('{' + k + '}',args[k]);
+                if(real_url.indexOf('{' + k + '}') > -1) {
+                    real_url = real_url.replace('{' + k + '}',args[k]);
+                    delete args[k];
+                }
             }
-            console.log('=============post json to dubbo rest service, url: ' + real_url + ',json:', args);
+            try{
+                console.log('=============post json to dubbo rest service, url: ' + real_url + ',json:', JSON.stringify(args));
+            }catch (e){
+                console.error(e);
+            }
             request.post({url:real_url,json:args}, function(err, rsp, body){
                 if(err){
                     console.log('=====invoke rest service post error:', err);
                     cb(err);
                 }else{
+                    if(body==null||body==undefined) body = {rs:1};
+                    console.log('==============post json to dubbo rest service, response: ', (typeof body)=='string'?body:JSON.stringify(body));
                     cb(false, (typeof body)=='string'?JSON.parse(body):body);
                 }
             });
         }else if(method_url[0].toUpperCase().indexOf("POST-FORM") != -1){
             var real_url = provider.host + method_url[1] + '?a=1';
             for(var k in args){
-                if(real_url.indexOf('{' + k + '}') > -1) real_url = real_url.replace('{' + k + '}',args[k]);
+                if(real_url.indexOf('{' + k + '}') > -1) {
+                    real_url = real_url.replace('{' + k + '}',args[k]);
+                    delete args[k];
+                }
             }
             console.log('=============post form to dubbo rest service, url: ' + real_url + ',form:', args);
             request.post({url:real_url,form:args}, function(err, rsp, body){
@@ -271,6 +284,8 @@ Invoker.prototype._excute = function (method, args, cb) {
                     console.log('=====invoke rest service post error:', err);
                     cb(err);
                 }else{
+                    body = body||{rs:1};
+                    console.log('==============post form to dubbo rest service, response: ', (typeof body)=='string'?body:JSON.stringify(body));
                     cb(false, (typeof body)=='string'?JSON.parse(body):body);
                 }
             });
@@ -286,6 +301,8 @@ Invoker.prototype._excute = function (method, args, cb) {
                     console.log('=====invoke rest service get error:', error);
                     cb(error);
                 }else{
+                    body = body||{rs:1};
+                    console.log('==============get from dubbo rest service, response: ', (typeof body)=='string'?body:JSON.stringify(body));
                     cb(false, (typeof body)=='string'?JSON.parse(body):body);
                 }
             });

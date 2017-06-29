@@ -4,6 +4,7 @@ env = "DEV";
 console.log('==============current env:', env);
 
 module.exports.env = env;
+module.exports.basePath = 'http://api.admin.woxing.com';
 module.exports.logger = {
     "appenders": [
         {

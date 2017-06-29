@@ -12,7 +12,7 @@ module.exports = function (app) {
             country:req.body.country||null,
             state:req.body.state||null
         }, function(err, crs){
-            if(err) res.json({rs:0,msg:err}).end();
+            if(err) return res.json({rs:0,msg:err}).end();
             res.json(crs).end()||'';
         });
     });
@@ -22,7 +22,7 @@ module.exports = function (app) {
         visaProductInfoService.excute('queryProductById',{
             id:req.params.id||0
         }, function(err, crs){
-            if(err) res.json({rs:0,msg:err}).end();
+            if(err) return res.json({rs:0,msg:err}).end();
             res.json(crs).end()||'';
         });
     });
@@ -33,7 +33,7 @@ module.exports = function (app) {
             var uname = userCrs.data.trueName||userCrs.data.loginName;
             req.body.creator = uname;
             visaProductInfoService.excute('addProduct',req.body, function(err, crs){
-                if(err) res.json({rs:0,msg:err}).end();
+                if(err) return res.json({rs:0,msg:err}).end();
                 res.json(crs).end()||'';
             });
         }).catch(function (crs) {
@@ -47,7 +47,7 @@ module.exports = function (app) {
             var uname = userCrs.data.trueName||userCrs.data.loginName;
             req.body.modifier = uname;
             visaProductInfoService.excute('updateProductBase',req.body, function(err, crs){
-                if(err) res.json({rs:0,msg:err}).end();
+                if(err) return res.json({rs:0,msg:err}).end();
                 res.json(crs).end()||'';
             });
         }).catch(function (crs) {
@@ -60,7 +60,7 @@ module.exports = function (app) {
         userService.queryUserInfo(req).then(function (userCrs) {
             var uname = userCrs.data.trueName||userCrs.data.loginName;
             visaProductInfoService.excute('updateProductState',{id:req.params.id||0, state:req.query.state, modifier:uname}, function(err, crs){
-                if(err) res.json({rs:0,msg:err}).end();
+                if(err) return res.json({rs:0,msg:err}).end();
                 res.json(crs).end()||'';
             });
         }).catch(function (crs) {
@@ -76,7 +76,7 @@ module.exports = function (app) {
                 id:req.params.id||0,
                 modifier:uname
             }, function(err, crs){
-                if(err) res.json({rs:0,msg:err}).end();
+                if(err) return res.json({rs:0,msg:err}).end();
                 res.json(crs).end()||'';
             });
         }).catch(function (crs) {
@@ -94,7 +94,7 @@ module.exports = function (app) {
                 state:req.query.state,
                 modifier:uname
             }, function(err, crs){
-                if(err) res.json({rs:0,msg:err}).end();
+                if(err) return res.json({rs:0,msg:err}).end();
                 res.json(crs).end()||'';
             });
         }).catch(function (crs) {
@@ -112,7 +112,7 @@ module.exports = function (app) {
                 modifier:uname
             }, function(err, crs){
                 console.log('====================xxxxxxxxxxxxxxxxxxxxxx============' + typeof crs);
-                if(err) res.json({rs:0,msg:err}).end();
+                if(err) return res.json({rs:0,msg:err}).end();
                 res.json(crs).end()||'';
             });
         }).catch(function (crs) {
@@ -125,7 +125,7 @@ module.exports = function (app) {
         userService.queryUserInfo(req).then(function (userCrs) {
             var uname = userCrs.data.trueName||userCrs.data.loginName;
             visaProductInfoService.excute('copyProduct',{id:req.params.id, operator:uname}, function(err, crs){
-                if(err) res.json({rs:0,msg:err}).end();
+                if(err) return res.json({rs:0,msg:err}).end();
                 res.json(crs).end()||'';
             });
         }).catch(function (crs) {

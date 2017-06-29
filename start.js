@@ -31,7 +31,7 @@ app.use(express.static('public'));//这个static中间件放到session处理前
 app.all('*', function (req, res, next) {
     //res.header('Access-Control-Allow-Origin', '*');
     var url = req.headers.origin;
-    console.log('=====================origin:', url);
+    //console.log('=====================origin:', url);
     if(url){
         res.header('Access-Control-Allow-Origin', url);
         res.header('Access-Control-Allow-Credentials', true);
@@ -68,5 +68,8 @@ var productInfoController = require('./controller/admin/productInfoController');
 productInfoController(app);
 var productPriceController = require('./controller/admin/productPriceController');
 productPriceController(app);
+
+var orderController = require('./controller/admin/orderController');
+orderController(app);
 /*************************************** controller for admin end **************************************/
 
