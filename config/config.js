@@ -1,6 +1,6 @@
 var env = process.env.VISA_ENV || "PROD"; //DEV | PROD
 //for test :
-env = "DEV";
+//env = "DEV";
 console.log('==============current env:', env);
 
 module.exports.env = env;

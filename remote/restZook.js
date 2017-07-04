@@ -276,8 +276,11 @@ Invoker.prototype._excute = function (method, args, cb) {
                 if(real_url.indexOf('{' + k + '}') > -1) {
                     real_url = real_url.replace('{' + k + '}',args[k]);
                     delete args[k];
+                }else{
+                    args[k] = encodeURIComponent(args[k]);
                 }
             }
+
             console.log('=============post form to dubbo rest service, url: ' + real_url + ',form:', args);
             request.post({url:real_url,form:args}, function(err, rsp, body){
                 if(err){

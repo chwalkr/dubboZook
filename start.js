@@ -1,4 +1,5 @@
 'use strict';
+//var domain = require('domain');
 var express = require('express');
 var bodyParser = require('body-parser');
 var config = require('./config/config'); //配置
@@ -9,6 +10,21 @@ var IDGenerator = require('./util/IDGenerator');
 var logger = require('./util/Log').getLogger('app');
 
 var app = express();
+
+
+/*app.use(function (req,res, next) {
+    var d = domain.create();
+    //监听domain的错误事件
+    d.on('error', function (err) {
+        logger.error(err);
+        res.statusCode = 500;
+        res.json({sucess:false, messag: '服务器异常'});
+        d.dispose();
+    });
+    d.add(req);
+    d.add(res);
+    d.run(next);
+});*/
 
 //var log4js = require('log4js');
 //app.use(log4js.connectLogger(log4js.getLogger("http"), { level: 'auto' }));
@@ -43,16 +59,15 @@ app.all('*', function (req, res, next) {
 });
 app.use(function(err, req, res, next) {
     console.error('======inner service exception',err.stack);
-    res.status(500).json({rs:0, msg:'内部服务发生异常'});
+    res.status(200).json({rs:0, msg:'内部服务发生异常'});
 });
 app.get('/visa/ver', function (req, res) {
     logger.info('query version:', req.query, req.body);
     res.status(200).send('ver:20170606');
 });
 
-app.get('/visa/product', function (req, res) {
-    res.redirect('/visa/product/list.html');
-});
+
+
 
 var port = process.env.PORT || 2101;
 var httpServer = require('http').createServer(app);

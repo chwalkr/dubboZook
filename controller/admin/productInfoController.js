@@ -6,7 +6,7 @@ module.exports = function (app) {
         console.log('=========product list search : ', req.body);
         visaProductInfoService.excute('queryProductByConditon',{
             pageNo:req.body.pageNo||1,
-            pageSize:req.body.pageSize||10,
+            pageSize:(req.body.pageSize||10),
             name:req.body.name||'',
             visaCode:req.body.visaCode||'',
             country:req.body.country||null,

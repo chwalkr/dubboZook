@@ -15,7 +15,8 @@ var UserService = {
         try{
             let pgc = req.cookies.PGC;
             if(!pgc) return  null;
-            return XXTea.decryptFromBase64(pgc, USER_ENCRYPT_KEY);
+            var decrypt_str = XXTea.decryptFromBase64(pgc, USER_ENCRYPT_KEY);
+            return decrypt_str.split("#")[1];
         }catch(e){
         }
         return null;

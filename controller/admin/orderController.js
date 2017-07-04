@@ -6,6 +6,8 @@ var visaQueryFacadeRemote = require('../../remote/dubboRemote').visaQueryFacadeR
 var visaOperationFacedeRemote = require('../../remote/dubboRemote').visaOperationFacadeRemote;
 var DateUtil = require('../../util/DateUtil');
 var DeepCopy = require('../../util/DeepCopy');
+var constants = require('../../constant/constants');
+
 module.exports = function (app) {
     /**
      * 列表查询
@@ -17,10 +19,11 @@ module.exports = function (app) {
     app.post('/visa/v2/order/search', function (req, res, next) {
         console.log('order search :', req.body);
         var country = req.body.country || 'usa';
+        req.body.country = country;
         var crs = {rs:1,
             data:{
-                pageNo:req.body.pageNO||1,
-                pageSize:req.body.pageSize||10,
+                pageNo:(req.body.pageNo||1),
+                pageSize:(req.body.pageSize||10),
                 totalPage:0,
                 currentPage:1,
                 total:0,
@@ -33,13 +36,18 @@ module.exports = function (app) {
             delete req.body.country;
             req.body.country = {name:ct};
         }
+        if(isNaN(req.body.orderCD)){
+            var orderItemCD = req.body.orderCD;
+            delete req.body.orderCD;
+            req.body.orderItemCD = orderItemCD;
+        }
         var flow_req = DeepCopy(req.body);
 
         visaFlowTplService.excute('queryVisaFlowTplByCountry', {country: country}, function (err, crs) {
             if(err) res.json({rs:0, msg:err}).end();
             console.log('queryVisaFlowTplByCountry result', JSON.stringify(crs));
             var nodes = crs.data.nodes;
-            var rtn = {rs:1,data:{}};
+            var rtn = {rs:1,data:{pageSize:(req.body.pageSize||10),nodes:nodes}};
             var queryCount = function(idx){
                 if(idx>=nodes.length){
                     crs.data.countFlow = nodes;
@@ -59,10 +67,10 @@ module.exports = function (app) {
                             var lists = orderPag.resultList;
                             lists.forEach(function (visaOrder) {
                                 var one = {
-                                    orderCD: visaOrder.orderCD,
+                                    orderCD: visaOrder.orderItemCD,
                                     title: visaOrder.productTitle,
                                     pkgDesc: '',
-                                    guests: [],
+                                    guests: '',
                                     contact:'',
                                     currency: visaOrder.receivableCurrency.name,
                                     amount: visaOrder.receivableAmount
@@ -70,16 +78,21 @@ module.exports = function (app) {
                                 visaOrder.viasPackageItems.forEach(function(p,idx){
                                     one.pkgDesc += p.packageItemCN + (idx==visaOrder.viasPackageItems.length-1 ? '' : '-');
                                 });
-                                visaOrder.visaGuestInfo.forEach(function(g){
-                                    one.guests.push({name:g.firstName,type:g.personType.name});
+                                visaOrder.visaGuestInfo.forEach(function(g,idx){
+                                    one.guests += g.firstName + (idx==visaOrder.visaGuestInfo.length-1 ? '' : ',');
                                 });
                                 nodes.forEach(function (no) {
-                                    if(no.code == visaOrder.currentFlowNode){
+                                    if( no.code == visaOrder.currentFlowNode ){
                                         one.currentNodeCode = no.code;
                                         one.currentNodeName = no.name;
                                         one.command = no.command;
                                     }
                                 });
+                                if(!one.currentNodeCode){
+                                    one.currentNodeCode = '';
+                                    one.currentNodeName = '';
+                                    one.command = [];
+                                }
                                 rtn.data.list.push(one);
                             });
                             res.json(rtn).end();
@@ -108,23 +121,24 @@ module.exports = function (app) {
      */
     app.get('/visa/v2/order/flow/process', function (req, res, next) {
         //按钮事件GET /visa/v2/order/flow/process?key=xxx&orderItemCD=xxx
-        console.log('process order flow',req.params.orderItemCD);
+        console.log('process order flow',req.query);
         userService.queryUserInfo(req).then(function (use) {
             var userName = use.data.trueName || use.data.trueName;
             visaOrderFlowService.excute('processOrderFlow',
-                [{orderItemCD: req.params.orderItemCD, command: req.params.key, operator: userName}],
+                {orderItemCD: req.query.orderItemCD, command: req.query.key, operator: userName},
                 function (err, crs) {
                     if(err) return res.json({rs: 0, msg: err}).end();
                     console.log('processOrderFlow result', JSON.stringify(crs));
                     if(!crs.rs) return res.json({rs: 0, msg: '流程处理失败'});
                     //更新订单冗余的currentFlowNode字段
-                    var nextNode = crs.data;
-                    visaOperationFacedeRemote.excute('updateVisaCurrentFlowNode',[{$class: 'java.lang.String', $:req.params.orderItemCD},{$class: 'java.lang.String', nextNode}],
+                    var next = crs.data;
+                    visaOperationFacedeRemote.excute('updateVisaCurrentFlowNode',[{$class: 'java.lang.String', $:req.query.orderItemCD},{$class: 'java.lang.String', $:next}],
                     function (err, crs) {
-                        if (err) return res.json({rs: 0, msg: err}).end();
+                        console.error('updateVisaCurrentFlowNode error:', err);
+                        if (err) return res.json({rs: 0, msg: err.message}).end();
                         console.log('updateVisaCurrentFlowNode result', JSON.stringify(crs));
-                        if (!crs.rs) return res.json({rs: 0, msg: '处理订单失败'});
-                        res.json(crs).end();
+                        if (!crs.result) return res.json({rs: 0, msg: crs.returnMessage});
+                        res.json({rs:1}).end();
                     });
             })
         });
@@ -158,8 +172,8 @@ module.exports = function (app) {
                 contact:{name:order.contact.firstName,mobile:order.contact.cellphone,email:order.contact.email},
                 amount:order.receivableAmount,
                 currency:order.receivableCurrency.name,
-                orderStatus:order.orderStatus.name,
-                paymentStatus:order.paymentStatus.name,
+                orderStatus:constants.orderStatus[order.orderStatus.name],
+                paymentStatus:constants.paymentStatus[order.paymentStatus.name],
                 pkg:{},
                 areaCode:'',
                 areaName:'',
@@ -215,7 +229,9 @@ module.exports = function (app) {
         visaOrderDatumTableService.excute('updateGuestDatum',req.body, function(err, crs){
             if(err) return res.json({rs:0,msg:err}).end();
             console.log('========================update guest datum result:', crs);
-            var data = {answers:answers, orderItemCD:req.params.orderItemCD,guestId:req.params.guestId};
+            var data = answers;
+            data.orderItemCD = req.params.orderItemCD;
+            data.guestId = req.params.guestId;
             console.log('=========update guest datum reco info : ', data);
             visaOrderDatumTableService.excute('updateGuestTableWithAnswer',data, function(err, crs){
                 if(err) return res.json({rs:0,msg:err}).end();
@@ -228,9 +244,11 @@ module.exports = function (app) {
     /**
      * 更新客人表格信息
      */
-    app.post('/visa/v2/order/guest/table/update', function (req, res, next) {
+    app.post('/visa/v2/order/guest/table/update/:orderItemCD/:guestId', function (req, res, next) {
         console.log('=========update guest table : ', req.params.orderItemCD, req.params.guestId, req.body);
         var table = req.body||{};
+        table.orderItemCD = req.params.orderItemCD;
+        table.guestId = req.params.guestId;
         visaOrderDatumTableService.excute('updateGuestTable',table, function(err, crs){
             if(err) return res.json({rs:0,msg:err}).end();
             console.log('========================update guest table result:', crs);

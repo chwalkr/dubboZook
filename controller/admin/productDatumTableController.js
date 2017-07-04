@@ -52,7 +52,7 @@ module.exports = function (app) {
                 if(err) return res.json({rs:0,msg:err}).end();
                 var table = crs.data;
                 visaProductInfoService.excute('queryProductByCode',{visaCode:req.params.visaCode}, function(err, crs){
-                    if(err) return res.json({rs:0,msg:err}).end();
+                    if(err||crs.rs!=1) return res.json({rs:0,msg:err||crs.msg}).end();
                     var info = crs.data;
                     res.json({rs:1,data:{table:table,datums:datums,feedback:info.feedback||''}}).end();
                 });
@@ -60,8 +60,8 @@ module.exports = function (app) {
         });
     });
 
-    app.post('/visa/v2/product/datums/save', function (req, res, next) {
-        console.log('=========save datums of product', req.body);
+    app.post('/visa/v2/product/datums/save/:visaCode', function (req, res, next) {
+        console.log('=========save datums of product', req.params, req.body);
         var feedback = req.body.feedback||'';
         var datums = req.body.datums||[];
         visaProductDatumTableService.excute('saveVisaDatums',datums, function(err, crs){
