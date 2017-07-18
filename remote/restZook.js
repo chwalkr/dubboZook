@@ -112,7 +112,8 @@ ZD.prototype.getProvider = function (path, version, cb) {
             //console.log('=========parsed json:',parsed);
             provider = {
                 host: parsed.host,
-                methods:{} //e.g.{"methodA":"GET:/product/query/{id}","methodB":"POST:/product/edit"}
+                methods:{}, //e.g.{"methodA":"GET:/product/query/{id}","methodB":"POST:/product/edit"}
+                timeoutCount:0 //超时次数，如果达到一定次数，就清掉provider缓存
             };
             var pathname_arr = parsed.pathname.split("/");///visa/v2/com.woqu.visa.v2.product.service.VisaProductInfoService
             var pathStr = "", interfaceStr = "", len = pathname_arr.length;
@@ -233,7 +234,18 @@ Invoker.prototype._excute = function (method, args, cb) {
     } else {
         fromCache = false;
         return self._zd.getProvider(self._path, self._version, httpFetch);
-    } 
+    }
+    function needReFetchProvider(err, provider){
+        if(err.errno == 'ECONNREFUSED') provider.connRefused = true;
+        if(err.errno == 'ETIMEDOUT')  provider.timeoutCount++;
+        if(provider.connRefused || provider.timeoutCount > 3){
+            self._zd.cache[self._path] = null;
+            self._zd.cache['com.'] = null;
+            return true;
+        }else{
+            return false;
+        }
+    }
     function httpFetch(err, provider) {
         if (err) {
             return cb(err);
@@ -260,9 +272,12 @@ Invoker.prototype._excute = function (method, args, cb) {
             }catch (e){
                 console.error(e);
             }
-            request.post({url:real_url,json:args}, function(err, rsp, body){
+            request.post({url:real_url,json:args,timeout:10000}, function(err, rsp, body){
                 if(err){
                     console.log('=====invoke rest service post error:', err);
+                    if(needReFetchProvider(err, provider)){
+                        return cb('服务连接超时');
+                    }
                     cb(err);
                 }else{
                     if(body==null||body==undefined) body = {rs:1};
@@ -277,14 +292,17 @@ Invoker.prototype._excute = function (method, args, cb) {
                     real_url = real_url.replace('{' + k + '}',args[k]);
                     delete args[k];
                 }else{
-                    args[k] = encodeURIComponent(args[k]);
+                    //args[k] = encodeURIComponent(args[k]);
                 }
             }
 
             console.log('=============post form to dubbo rest service, url: ' + real_url + ',form:', args);
-            request.post({url:real_url,form:args}, function(err, rsp, body){
+            request.post({url:real_url,form:args,timeout:10000,headers:{'Content-Type':'application/x-www-form-urlencoded;charset=utf-8'}}, function(err, rsp, body){
                 if(err){
                     console.log('=====invoke rest service post error:', err);
+                    if(needReFetchProvider(err, provider)){
+                        return cb('服务连接超时');
+                    }
                     cb(err);
                 }else{
                     body = body||{rs:1};
@@ -299,9 +317,12 @@ Invoker.prototype._excute = function (method, args, cb) {
                 else real_url += '&' + k + '=' + encodeURIComponent(args[k]);
             }
             console.log('=============get from dubbo rest service, url: ' + real_url);
-            request.get(real_url, function (error, response, body) {
+            request.get({url:real_url,timeout:10000}, function (error, response, body) {
                 if(error){
                     console.log('=====invoke rest service get error:', error);
+                    if(needReFetchProvider(error, provider)){
+                        return cb('服务连接超时');
+                    }
                     cb(error);
                 }else{
                     body = body||{rs:1};

@@ -14,24 +14,14 @@ module.exports = function (app) {
      * 1、按国家查询流程模版
      * 2、依据模版和查询条件信息进行统计查询
      * 3、查询签证订单信息
-     * req.body = {pageNo:1,pageSize:10,country:'usa',orderCD:'xxx',guestName:'xxx',contactCellPhone:'13355555555',flowNode:'xxx'}
+     * req.body = {pageNo:1,pageSize:10,country:'usa',orderCD:'xxx',guestName:'xxx',contactWay:'13355555555',flowNode:'xxx'}
      */
     app.post('/visa/v2/order/search', function (req, res, next) {
         console.log('order search :', req.body);
-        var country = req.body.country || 'usa';
-        req.body.country = country;
-        var crs = {rs:1,
-            data:{
-                pageNo:(req.body.pageNo||1),
-                pageSize:(req.body.pageSize||10),
-                totalPage:0,
-                currentPage:1,
-                total:0,
-                list:[],
-                countFlow:[]
-            }
-        };
-        if(typeof req.body.country === 'string'){
+        var country = req.body.country;
+        if(!req.body.country){
+            req.body.country = null;
+        }else if(typeof req.body.country === 'string'){
             var ct = req.body.country;
             delete req.body.country;
             req.body.country = {name:ct};
@@ -41,16 +31,19 @@ module.exports = function (app) {
             delete req.body.orderCD;
             req.body.orderItemCD = orderItemCD;
         }
+        req.body.bookingSource = {name:'SROUTINE'};
         var flow_req = DeepCopy(req.body);
 
-        visaFlowTplService.excute('queryVisaFlowTplByCountry', {country: country}, function (err, crs) {
-            if(err) res.json({rs:0, msg:err}).end();
+        visaFlowTplService.excute('queryVisaFlowTplByCountry', (country?{country:country}:{}), function (err, crs) {
+            if(err) return res.json({rs:0, msg:err}).end();
             console.log('queryVisaFlowTplByCountry result', JSON.stringify(crs));
+            if(crs.rs!=1){
+                return res.json({rs:0, msg:'内部服务异常'}).end();
+            }
             var nodes = crs.data.nodes;
             var rtn = {rs:1,data:{pageSize:(req.body.pageSize||10),nodes:nodes}};
             var queryCount = function(idx){
                 if(idx>=nodes.length){
-                    crs.data.countFlow = nodes;
                     console.log('===========queryVisaOrderForPage:' + JSON.stringify(flow_req));
                     visaQueryFacadeRemote.excute('queryVisaOrderForPage',
                         [{$class:'com.woqu.order.booking.bo.visa.VisaOrderQueryRequest', $: flow_req}],
@@ -67,14 +60,21 @@ module.exports = function (app) {
                             var lists = orderPag.resultList;
                             lists.forEach(function (visaOrder) {
                                 var one = {
-                                    orderCD: visaOrder.orderItemCD,
+                                    orderItemCD: visaOrder.orderItemCD,
+                                    orderCD: visaOrder.orderCD,
                                     title: visaOrder.productTitle,
                                     pkgDesc: '',
                                     guests: '',
                                     contact:'',
                                     currency: visaOrder.receivableCurrency.name,
-                                    amount: visaOrder.receivableAmount
+                                    amount: visaOrder.receivableAmount,
+                                    orderStatus:constants.orderStatus[(visaOrder.orderStatus||{}).name],
+                                    paymentStatus:constants.paymentStatus[(visaOrder.paymentStatus||{}).name]
                                 };
+                                if(visaOrder.contact){
+                                    one.contact = visaOrder.contact.firstName + (visaOrder.contact.surname ? ' ' + visaOrder.contact.surname : '');
+                                    if(visaOrder.contact.cellphone) one.contact += '(' + visaOrder.contact.cellphone + ')';
+                                }
                                 visaOrder.viasPackageItems.forEach(function(p,idx){
                                     one.pkgDesc += p.packageItemCN + (idx==visaOrder.viasPackageItems.length-1 ? '' : '-');
                                 });
@@ -85,12 +85,12 @@ module.exports = function (app) {
                                     if( no.code == visaOrder.currentFlowNode ){
                                         one.currentNodeCode = no.code;
                                         one.currentNodeName = no.name;
-                                        one.command = no.command;
+                                        one.command = (typeof no.command == 'string' ? JSON.parse(no.command):no.command)
                                     }
                                 });
                                 if(!one.currentNodeCode){
                                     one.currentNodeCode = '';
-                                    one.currentNodeName = '';
+                                    one.currentNodeName = '已结束';
                                     one.command = [];
                                 }
                                 rtn.data.list.push(one);
@@ -120,12 +120,12 @@ module.exports = function (app) {
      * 处理订单流程
      */
     app.get('/visa/v2/order/flow/process', function (req, res, next) {
-        //按钮事件GET /visa/v2/order/flow/process?key=xxx&orderItemCD=xxx
+        //按钮事件GET /visa/v2/order/flow/process?key=xxx&orderItemCD=xxx&note=xxx
         console.log('process order flow',req.query);
         userService.queryUserInfo(req).then(function (use) {
             var userName = use.data.trueName || use.data.trueName;
-            visaOrderFlowService.excute('processOrderFlow',
-                {orderItemCD: req.query.orderItemCD, command: req.query.key, operator: userName},
+            visaOrderFlowService.excute('processOrderFlowCurrent',
+                {orderItemCD: req.query.orderItemCD, currentNode:req.query.currentNode, command: req.query.key, operator: userName, note: req.query.note},
                 function (err, crs) {
                     if(err) return res.json({rs: 0, msg: err}).end();
                     console.log('processOrderFlow result', JSON.stringify(crs));
@@ -143,6 +143,8 @@ module.exports = function (app) {
             })
         });
     });
+
+
     /**
      * 查询国家对应处理流程
      */
